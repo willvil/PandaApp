@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PandaApps">
+<meta name="theme-color" content="#0D1B2A">
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-apple.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>PandaApps — Registro de Turno</title>
+<style>
+/* ── Reset & base ─────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:#F0F2F5;color:#1a2b3c;min-height:100vh;}
+
+/* ── APP HEADER ─────────────────────────────────────────────── */
+.app-hdr{background:#0D1B2A;padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.logo{font-size:18px;font-weight:800;color:#fff;letter-spacing:.5px;}
+.logo em{color:#C0392B;font-style:normal;}
+.hdr-meta{display:flex;align-items:center;gap:14px;}
+.hdr-badge{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.7);}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#2ECC71;box-shadow:0 0 6px #2ECC71;}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────────── */
+.app-body{display:grid;grid-template-columns:400px 1fr;gap:0;min-height:calc(100vh - 54px);}
+
+/* ── FORM PANEL ─────────────────────────────────────────────── */
+.form-panel{background:#fff;border-right:1px solid #E0E4EA;overflow-y:auto;padding:0;}
+.fp-hdr{background:#0D1B2A;padding:16px 20px 14px;position:sticky;top:0;z-index:50;}
+.fp-hdr h2{color:#fff;font-size:14px;font-weight:700;margin-bottom:2px;}
+.fp-hdr p{color:rgba(255,255,255,.45);font-size:10.5px;}
+.fp-body{padding:14px 18px 80px;}
+.sec{margin-bottom:16px;}
+.sec-title{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid #F0F2F5;}
+
+/* Form inputs */
+.fg{margin-bottom:10px;}
+.fg label{display:block;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.fg input,.fg select,.fg textarea{width:100%;border:1.5px solid #E0E4EA;border-radius:8px;padding:8px 10px;font-size:11.5px;color:#333;background:#fff;outline:none;font-family:inherit;transition:border-color .15s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#0D1B2A;}
+.fg textarea{resize:vertical;min-height:72px;line-height:1.55;}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fg-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+
+/* Equipment buttons */
+.eq-row{display:flex;align-items:center;padding:7px 0;border-bottom:.5px solid #F5F5F5;}
+.eq-row:last-child{border-bottom:none;}
+.eq-name{flex:1;min-width:0;}
+.eq-n{font-size:11px;font-weight:700;color:#333;}
+.eq-s{font-size:9px;color:#ccc;}
+.eq-btns{display:flex;gap:4px;flex-shrink:0;}
+.eq-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1.5px solid;cursor:pointer;font-size:10px;font-weight:700;transition:all .15s;background:#F8F8F8;white-space:nowrap;}
+.eq-btn.btn-on{border-color:#27AE60;color:#27AE60;}
+.eq-btn.btn-on.act{background:#27AE60;color:#fff;box-shadow:0 2px 8px rgba(39,174,96,.3);}
+.eq-btn.btn-warn{border-color:#E67E22;color:#E67E22;}
+.eq-btn.btn-warn.act{background:#E67E22;color:#fff;box-shadow:0 2px 8px rgba(230,126,34,.3);}
+.eq-btn.btn-off{border-color:#E74C3C;color:#E74C3C;}
+.eq-btn.btn-off.act{background:#E74C3C;color:#fff;box-shadow:0 2px 8px rgba(231,76,60,.3);}
+.eq-dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+/* Variables table */
+.var-tbl{width:100%;border-collapse:collapse;}
+.var-tbl th{font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;padding:4px 3px;text-align:center;letter-spacing:.05em;}
+.var-tbl th:first-child{text-align:left;}
+.var-tbl td{padding:5px 3px;vertical-align:middle;}
+.vname{font-size:10.5px;font-weight:700;color:#333;}
+.vunit{font-size:8.5px;color:#bbb;font-weight:400;}
+.vinp{width:62px;border:1.5px solid #E0E4EA;border-radius:7px;padding:5px 4px;font-size:11px;font-weight:700;text-align:center;outline:none;transition:all .2s;}
+.vinp.ok{border-color:#27AE60;background:#F0FFF4;color:#1E8449;}
+.vinp.er{border-color:#E74C3C;background:#FFF5F5;color:#E74C3C;}
+.lim-ctrl{display:flex;align-items:center;gap:3px;justify-content:center;}
+.lim-val{font-size:10px;font-weight:700;color:#555;min-width:26px;text-align:center;}
+.pm-btn{width:20px;height:20px;border-radius:5px;border:none;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .1s;}
+.pm-btn:active{transform:scale(.9);}
+.pm-m{background:#FADBD8;color:#E74C3C;}
+.pm-p{background:#D5F5E3;color:#27AE60;}
+.vstat{width:10px;height:10px;border-radius:50%;margin:0 auto;}
+.vstat.ok{background:#27AE60;}
+.vstat.er{background:#E74C3C;animation:bl .8s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* Generate button */
+.gen-btn{width:100%;padding:13px;border:none;border-radius:10px;background:#C0392B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;transition:all .15s;box-shadow:0 4px 14px rgba(192,57,43,.3);}
+.gen-btn:hover{background:#A93226;box-shadow:0 4px 18px rgba(192,57,43,.45);}
+.gen-btn:active{transform:scale(.98);}
+
+/* ── CARD PANEL ─────────────────────────────────────────────── */
+.card-panel{display:flex;flex-direction:column;padding:24px 28px;}
+.card-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.card-panel-hdr h2{font-size:14px;font-weight:700;color:#0D1B2A;}
+.card-panel-hdr p{font-size:10.5px;color:#999;margin-top:2px;}
+
+/* Placeholder */
+.placeholder{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ccc;text-align:center;padding:40px;}
+.placeholder svg{width:64px;height:64px;stroke:#ddd;fill:none;stroke-width:1.2;margin-bottom:16px;}
+.placeholder h3{font-size:15px;font-weight:600;color:#ccc;margin-bottom:6px;}
+.placeholder p{font-size:11.5px;color:#ddd;line-height:1.6;}
+
+/* ── TARJETA DOCUMENT ─────────────────────────────────────────── */
+.tarjeta-wrap{background:#F0F2F5;padding:20px;border-radius:12px;flex:1;}
+.tarjeta-doc{background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden;max-width:700px;margin:0 auto;}
+.td-hdr{padding:20px 24px 16px;color:#fff;}
+.td-hdr-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+.td-tipo-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;opacity:.75;margin-bottom:4px;}
+.td-ttl{font-size:18px;font-weight:800;}
+.td-ref-box{text-align:right;}
+.td-ref{font-size:11px;font-weight:700;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:6px;display:inline-block;}
+.td-ref-dt{font-size:9px;opacity:.6;margin-top:3px;}
+.td-progress{height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden;}
+.td-progress-fill{height:100%;background:rgba(255,255,255,.6);border-radius:2px;}
+.td-body{padding:20px 24px;}
+.td-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin-bottom:16px;}
+.td-field{}
+.td-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;letter-spacing:.06em;margin-bottom:3px;}
+.td-val{font-size:12px;font-weight:600;color:#1a2b3c;}
+.td-divider{height:1px;background:#F0F2F5;margin:14px 0;}
+
+/* Variable badge */
+.var-badge{background:#EBF5FB;border-left:3px solid #2980B9;border-radius:6px;padding:10px 14px;margin-bottom:8px;}
+.vb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.vb-name{font-size:12px;font-weight:700;color:#1A5276;}
+.vb-status{font-size:9px;font-weight:700;text-transform:uppercase;padding:3px 9px;border-radius:10px;}
+.vb-values{display:flex;gap:20px;}
+.vbv{text-align:center;}
+.vbv-lbl{font-size:8.5px;color:#bbb;font-weight:700;text-transform:uppercase;margin-bottom:2px;}
+.vbv-val{font-size:14px;font-weight:800;}
+.vbv-val.out{color:#E74C3C;}
+.vbv-val.ok{color:#27AE60;}
+.vbv-val.lim{color:#E67E22;}
+
+/* Equipment badge */
+.eq-badge{background:#FADBD8;border-left:3px solid #E74C3C;border-radius:6px;padding:8px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.eq-badge-name{font-size:11.5px;font-weight:700;color:#922B21;}
+.eq-badge-state{font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;}
+
+/* Obs box */
+.obs-box{background:#F8F9FA;border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+.obs-box-lbl{font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;margin-bottom:6px;letter-spacing:.05em;}
+.obs-box-txt{font-size:11.5px;color:#444;line-height:1.6;}
+
+/* Action box */
+.act-box{border-radius:8px;padding:12px 14px;margin-bottom:16px;}
+.act-box-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.act-box-items{list-style:none;}
+.act-box-items li{font-size:11px;line-height:1.6;padding:2px 0;display:flex;gap:8px;}
+.act-num{font-weight:700;flex-shrink:0;}
+
+/* Signatures */
+.sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.sig-box{text-align:center;}
+.sig-line{border-bottom:1.5px solid #ccc;margin-bottom:5px;height:32px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-size:10px;color:#555;}
+.sig-lbl{font-size:8.5px;color:#bbb;font-weight:600;}
+
+/* Cierre box */
+.cierre-box{background:#F8F9FA;border-radius:8px;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.cierre-field{border-bottom:1px solid #ddd;padding-bottom:4px;}
+.cierre-lbl{font-size:8.5px;color:#bbb;font-weight:700;text-transform:uppercase;margin-bottom:2px;}
+
+/* Document footer */
+.td-footer{background:#0D1B2A;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;}
+.td-footer-l{font-size:9px;color:rgba(255,255,255,.5);}
+.td-footer-r{font-size:9px;color:rgba(255,255,255,.4);}
+
+/* ── PHOTO ZONE ──────────────────────────────────────────────── */
+.photo-zone{border:2px dashed #D0D5DD;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;background:#FAFAFA;position:relative;overflow:hidden;}
+.photo-zone:hover{border-color:#C0392B;}
+.photo-ph{display:flex;flex-direction:column;align-items:center;gap:6px;color:#bbb;pointer-events:none;}
+.photo-ph svg{width:32px;height:32px;stroke:#ccc;fill:none;stroke-width:1.5;}
+.photo-ph span{font-size:11px;font-weight:600;}
+.photo-ph small{font-size:9.5px;color:#ddd;}
+.photo-preview-img{width:100%;max-height:200px;object-fit:contain;background:#F5F5F5;border-radius:8px;display:none;}
+.photo-clear-btn{margin-top:6px;padding:5px 12px;border:1.5px solid #E74C3C;border-radius:7px;background:#fff;color:#E74C3C;font-size:10.5px;font-weight:700;cursor:pointer;display:none;}
+.photo-clear-btn:hover{background:#FFF5F5;}
+/* Tarjeta foto */
+.td-photo{margin-bottom:14px;}
+.td-photo img{width:100%;max-height:220px;object-fit:contain;background:#F8F8F8;border-radius:8px;border:1px solid #E0E4EA;}
+
+/* PRINT BUTTON */
+.print-area{max-width:700px;margin:14px auto 0;display:flex;gap:10px;}
+.print-btn{flex:1;padding:12px 20px;border:none;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+.print-btn:active{transform:scale(.98);}
+.print-btn-main{color:#fff;}
+.print-btn-sec{background:#F0F2F5;color:#555;border:1.5px solid #ddd;}
+.print-btn-sec:hover{background:#E8EBF0;}
+
+/* ── RESPONSIVE MOBILE ───────────────────────────────────────── */
+@media(max-width:768px){
+  .app-hdr{padding:0 16px;height:50px;}
+  .logo{font-size:16px;}
+  .hdr-badge:first-child{display:none;}
+  .app-body{grid-template-columns:1fr;min-height:auto;}
+  .form-panel{border-right:none;border-bottom:2px solid #E0E4EA;}
+  .fp-body{padding:12px 14px 24px;}
+  .card-panel{padding:16px 14px;}
+  .card-panel-hdr{margin-bottom:12px;}
+  .fg-row,.fg-row3{grid-template-columns:1fr;}
+  .eq-btns{gap:5px;}
+  .eq-btn{padding:6px 8px;font-size:10px;}
+  .var-tbl th:nth-child(3),.var-tbl th:nth-child(4){font-size:8px;}
+  .vinp{width:54px;}
+  .lim-val{min-width:22px;font-size:9.5px;}
+  .pm-btn{width:22px;height:22px;}
+  .tarjeta-wrap{padding:12px;}
+  .td-grid{grid-template-columns:1fr 1fr;}
+  .sig-grid{grid-template-columns:1fr;}
+  .print-area{flex-direction:column;}
+  .td-body{padding:14px 16px;}
+  .td-hdr{padding:16px 16px 12px;}
+  .td-ttl{font-size:15px;}
+  .vb-values{flex-wrap:wrap;gap:12px;}
+  .td-footer{flex-direction:column;gap:4px;text-align:center;}
+}
+@media(max-width:480px){
+  .eq-btn{padding:5px 6px;font-size:9.5px;}
+  .eq-dot{display:none;}
+  .var-tbl{font-size:9.5px;}
+  .vinp{width:48px;font-size:10px;}
+  .td-grid{grid-template-columns:1fr;}
+  .cierre-box{grid-template-columns:1fr;}
+}
+
+/* ── TABS MOBILE NAV (shown on mobile) ───────────────────────── */
+.mob-tabs{display:none;background:#0D1B2A;position:sticky;top:50px;z-index:90;border-bottom:1px solid rgba(255,255,255,.08);}
+.mob-tab{flex:1;padding:10px 6px 9px;border:none;background:transparent;color:rgba(255,255,255,.4);font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:2px solid transparent;}
+.mob-tab.act{color:#C0392B;border-bottom-color:#C0392B;}
+.mob-tab svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+@media(max-width:768px){
+  .mob-tabs{display:flex;}
+  .form-panel,.card-panel{display:none;}
+  .form-panel.mob-show,.card-panel.mob-show{display:block;}
+  .card-panel.mob-show{display:flex;}
+}
+
+/* ── PRINT STYLES ────────────────────────────────────────────── */
+@media print {
+  @page{size:A4 portrait;margin:8mm 10mm;}
+  body{background:#fff !important;}
+  /* Ocultar todo excepto la tarjeta */
+  .app-hdr,.mob-tabs,.form-panel,.card-panel-hdr,.tarjeta-wrap > .print-area,
+  .placeholder,.fp-hdr,.gen-btn{display:none !important;}
+  /* Forzar visibilidad del panel de tarjeta (override del CSS mobile) */
+  .app-body{display:block !important;}
+  .card-panel{display:flex !important;padding:0 !important;}
+  .tarjeta-wrap{background:#fff !important;padding:0 !important;border-radius:0 !important;}
+  .tarjeta-doc{box-shadow:none !important;border-radius:0 !important;max-width:100% !important;page-break-inside:avoid;}
+  /* Compactar todo para que quepa en una hoja */
+  .td-hdr{padding:10px 14px 8px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .td-ttl{font-size:14px !important;}
+  .td-body{padding:10px 14px !important;}
+  .td-grid{gap:6px 14px !important;margin-bottom:8px !important;}
+  .td-val{font-size:10.5px !important;}
+  .td-divider{margin:7px 0 !important;}
+  .var-badge{padding:6px 10px !important;margin-bottom:5px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .vb-name{font-size:10.5px !important;}
+  .vbv-val{font-size:12px !important;}
+  .vb-values{gap:12px !important;}
+  .eq-badge{padding:5px 10px !important;margin-bottom:4px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .eq-badge-name{font-size:10px !important;}
+  .obs-box{padding:7px 10px !important;margin-bottom:8px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .obs-box-txt{font-size:10px !important;line-height:1.45 !important;}
+  .act-box{padding:7px 10px !important;margin-bottom:8px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .act-box-items li{font-size:9.5px !important;line-height:1.5 !important;padding:1px 0 !important;}
+  .sig-grid{gap:8px !important;margin-bottom:8px !important;}
+  .sig-line{height:26px !important;font-size:9px !important;}
+  .sig-lbl{font-size:7.5px !important;}
+  .cierre-box{padding:7px 10px !important;gap:10px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .td-footer{padding:8px 14px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .td-footer-l,.td-footer-r{font-size:8px !important;}
+  /* Foto: completa, sin recorte, limitada en alto */
+  .td-photo{margin-bottom:8px !important;}
+  .td-photo img{object-fit:contain !important;max-height:160px !important;background:#F8F8F8 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ APP HEADER ══════════════════════════════════════════════════ -->
+<div class="app-hdr">
+  <div class="logo">PANDA<em>APPS</em></div>
+  <div class="hdr-meta">
+    <span class="hdr-badge" id="hdr-planta">Planta Amazonas</span>
+    <span class="hdr-badge" id="hdr-turno">Turno 1 · 03:20</span>
+    <div class="online-dot"></div>
+  </div>
+</div>
+
+<!-- ══ MOBILE TABS ════════════════════════════════════════════════ -->
+<div class="mob-tabs" id="mob-tabs">
+  <button class="mob-tab act" id="mtab-form" onclick="mobTab('form')">
+    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Formulario
+  </button>
+  <button class="mob-tab" id="mtab-card" onclick="mobTab('card')">
+    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="13" y2="16"/></svg>
+    Tarjeta
+  </button>
+</div>
+
+<!-- ══ MAIN BODY ══════════════════════════════════════════════════ -->
+<div class="app-body">
+
+  <!-- ══ FORM PANEL ══════════════════════════════════════════════ -->
+  <div class="form-panel" id="form-panel">
+    <div class="fp-hdr">
+      <h2>Registro de Turno</h2>
+      <p>Complete el formulario y genere la tarjeta</p>
+    </div>
+    <div class="fp-body">
+
+      <!-- Info general -->
+      <div class="sec">
+        <div class="sec-title">Información general</div>
+        <div class="fg-row">
+          <div class="fg">
+            <label>Planta</label>
+            <input type="text" id="planta" value="Planta Amazonas" oninput="updHdr()">
+          </div>
+          <div class="fg">
+            <label>Operador</label>
+            <select id="operador">
+              <option>Carlos Mendoza</option>
+              <option>María Rodríguez</option>
+              <option selected>Juan Pérez</option>
+              <option>Andrea Torres</option>
+              <option>Luis Vargas</option>
+              <option>Sofía Castillo</option>
+              <option>Roberto Díaz</option>
+              <option>Patricia Morales</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg-row">
+          <div class="fg">
+            <label>Turno</label>
+            <select id="turno" onchange="updHdr()">
+              <option selected>Turno 1 (06–14h)</option>
+              <option>Turno 2 (14–22h)</option>
+              <option>Turno 3 (22–06h)</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Zona / Línea</label>
+            <select id="zona">
+              <option>Línea 1 — Corte</option>
+              <option>Línea 2 — Bobinado</option>
+              <option selected>Línea 3 — Empaque</option>
+              <option>Sala Compresores</option>
+              <option>Caldera / Vapor</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado de equipos -->
+      <div class="sec">
+        <div class="sec-title">Estado de equipos</div>
+        <div id="eq-container"></div>
+      </div>
+
+      <!-- Variables -->
+      <div class="sec">
+        <div class="sec-title">Variables de proceso</div>
+        <table class="var-tbl">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Variable</th>
+              <th>Valor</th>
+              <th>LIC</th>
+              <th>LSC</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="var-container"></tbody>
+        </table>
+      </div>
+
+      <!-- Observaciones -->
+      <div class="sec">
+        <div class="sec-title">Observaciones del turno</div>
+        <div class="fg">
+          <textarea id="obs" rows="4">Cortadora C1 vibración en sistema de corte transversal. Presión hidráulica en 5.2 bar, superó el LSC de 4.5 bar. Se notificó a mantenimiento.</textarea>
+        </div>
+      </div>
+
+      <!-- Foto del evento -->
+      <div class="sec">
+        <div class="sec-title">Foto del evento (opcional)</div>
+        <div class="fg">
+          <div class="photo-zone" id="photo-zone" onclick="document.getElementById('photo-inp').click()">
+            <input type="file" id="photo-inp" accept="image/*" capture="environment" style="display:none" onchange="loadPhoto(this)">
+            <div class="photo-ph" id="photo-ph">
+              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Tomar foto / Seleccionar imagen</span>
+              <small>La foto se incluirá en la tarjeta impresa</small>
+            </div>
+            <img class="photo-preview-img" id="photo-preview" alt="Foto del evento">
+          </div>
+          <button class="photo-clear-btn" id="photo-clear-btn" onclick="clearPhoto(event)">✕ Quitar foto</button>
+        </div>
+      </div>
+
+      <button class="gen-btn" onclick="generar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Generar Tarjeta(s)
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ CARD PANEL ══════════════════════════════════════════════ -->
+  <div class="card-panel" id="card-panel">
+    <div class="card-panel-hdr">
+      <div>
+        <h2>Vista previa de tarjeta</h2>
+        <p>Aquí aparecerá la tarjeta generada — lista para imprimir</p>
+      </div>
+    </div>
+
+    <!-- Placeholder -->
+    <div class="placeholder" id="placeholder">
+      <svg viewBox="0 0 64 64"><rect x="10" y="8" width="44" height="48" rx="4"/><line x1="18" y1="20" x2="46" y2="20"/><line x1="18" y1="28" x2="46" y2="28"/><line x1="18" y1="36" x2="38" y2="36"/><circle cx="46" cy="44" r="8"/><line x1="43" y1="44" x2="49" y2="44"/><line x1="46" y1="41" x2="46" y2="47"/></svg>
+      <h3>Sin tarjeta generada</h3>
+      <p>Complete el formulario y presione<br><strong>Generar Tarjeta(s)</strong> para ver la vista previa</p>
+    </div>
+
+    <!-- Tarjeta (hidden until generated) -->
+    <div id="tarjeta-output" style="display:none;flex:1;flex-direction:column;"></div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const EQ_DATA = [
+  {name:'Cortadora A',   sub:'Línea 3',       state:'on'},
+  {name:'Cortadora C1',  sub:'Falla activa',   state:'warn'},
+  {name:'Bobinadora B2', sub:'Línea 3',        state:'on'},
+  {name:'Compresor Ppal',sub:'Sala compr.',    state:'on'},
+  {name:'Mesa Empaque',  sub:'Línea 3',        state:'on'},
+];
+
+const VAR_DATA = [
+  {name:'Gramaje',           unit:'g/m²', val:80,  lic:78,  lsc:82,  step:0.5},
+  {name:'Temp. calandria',   unit:'°C',   val:72,  lic:65,  lsc:85,  step:1  },
+  {name:'Presión hidráulica',unit:'bar',  val:5.2, lic:2.0, lsc:4.5, step:0.1},
+  {name:'Humedad hoja',      unit:'%',    val:5.4, lic:3.0, lsc:6.0, step:0.1},
+  {name:'Velocidad línea',   unit:'m/min',val:95,  lic:80,  lsc:120, step:1  },
+];
+
+// Tarjeta PRODUCCIÓN — variable fuera de límites
+const ACCIONES_PROD = [
+  'Ajustar el parámetro dentro de los límites de control establecidos.',
+  'Identificar y registrar la causa raíz de la desviación.',
+  'Notificar inmediatamente al supervisor de producción.',
+  'Registrar acción correctiva en el sistema de órdenes de trabajo (OT).',
+  'No reanudar operación normal hasta confirmar parámetro dentro de límites.',
+];
+// Tarjeta ALERTA (equipo en estado Alerta) — inspección y preparación
+const ACCIONES_ALERTA = [
+  'Realizar inspección visual detallada del equipo y documentar hallazgos.',
+  'Revisar parámetros de operación y comparar con los estándares de referencia.',
+  'Preparar kit de intervención: herramientas, repuestos y EPP necesarios.',
+  'Notificar al supervisor y programar ventana de mantenimiento preventivo.',
+  'Monitorear el equipo cada 30 min hasta recibir decisión del supervisor.',
+];
+// Tarjeta FUERA DE SERVICIO (equipo detenido) — acciones de corrección
+const ACCIONES_CORRECTIVAS = [
+  'Detener inmediatamente el equipo y colocar tarjeta FUERA DE SERVICIO.',
+  'Abrir Orden de Trabajo (OT) de emergencia con descripción detallada de la falla.',
+  'Segregar el equipo y restringir el acceso hasta recibir diagnóstico de mantenimiento.',
+  'Ejecutar acción correctiva según procedimiento de reparación establecido.',
+  'Verificar funcionamiento normal antes de reintegrar el equipo a producción.',
+];
+
+// ── PHOTO HANDLING ───────────────────────────────────────────────
+let photoDataURL = null;
+
+function loadPhoto(inp) {
+  if (!inp.files || !inp.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoDataURL = e.target.result;
+    const prev = document.getElementById('photo-preview');
+    prev.src = photoDataURL;
+    prev.style.display = 'block';
+    document.getElementById('photo-ph').style.display = 'none';
+    document.getElementById('photo-clear-btn').style.display = 'block';
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+function clearPhoto(ev) {
+  ev.stopPropagation();
+  photoDataURL = null;
+  const prev = document.getElementById('photo-preview');
+  prev.style.display = 'none';
+  prev.src = '';
+  document.getElementById('photo-ph').style.display = 'flex';
+  document.getElementById('photo-clear-btn').style.display = 'none';
+  document.getElementById('photo-inp').value = '';
+}
+
+// ── BUILD EQUIPMENT ROWS ─────────────────────────────────────────
+function buildEq() {
+  const c = document.getElementById('eq-container');
+  c.innerHTML = EQ_DATA.map((e,i) => `
+    <div class="eq-row">
+      <div class="eq-name">
+        <div class="eq-n">${e.name}</div>
+        <div class="eq-s">${e.sub}</div>
+      </div>
+      <div class="eq-btns">
+        <button class="eq-btn btn-on ${e.state==='on'?'act':''}" onclick="setEq(${i},'on')">
+          <span class="eq-dot"></span>Operativo
+        </button>
+        <button class="eq-btn btn-warn ${e.state==='warn'?'act':''}" onclick="setEq(${i},'warn')">
+          <span class="eq-dot"></span>⚠ Alerta
+        </button>
+        <button class="eq-btn btn-off ${e.state==='off'?'act':''}" onclick="setEq(${i},'off')">
+          <span class="eq-dot"></span>F. Servicio
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function setEq(i, st) {
+  EQ_DATA[i].state = st;
+  buildEq();
+}
+
+// ── BUILD VARIABLE ROWS ──────────────────────────────────────────
+function buildVars() {
+  const tb = document.getElementById('var-container');
+  tb.innerHTML = VAR_DATA.map((v,i) => {
+    const ok = v.val >= v.lic && v.val <= v.lsc;
+    const dec = v.step < 1 ? 1 : 0;
+    return `<tr>
+      <td><div class="vname">${v.name}</div><div class="vunit">${v.unit}</div></td>
+      <td style="text-align:center;">
+        <input class="vinp ${ok?'ok':'er'}" id="vi${i}" type="number" step="${v.step}" value="${v.val}" oninput="chkV(${i},this.value)">
+      </td>
+      <td>
+        <div class="lim-ctrl">
+          <button class="pm-btn pm-m" onclick="adjL(${i},'lic',-1)">−</button>
+          <span class="lim-val" id="lic${i}">${v.lic.toFixed(dec)}</span>
+          <button class="pm-btn pm-p" onclick="adjL(${i},'lic',1)">+</button>
+        </div>
+      </td>
+      <td>
+        <div class="lim-ctrl">
+          <button class="pm-btn pm-m" onclick="adjL(${i},'lsc',-1)">−</button>
+          <span class="lim-val" id="lsc${i}">${v.lsc.toFixed(dec)}</span>
+          <button class="pm-btn pm-p" onclick="adjL(${i},'lsc',1)">+</button>
+        </div>
+      </td>
+      <td><div class="vstat ${ok?'ok':'er'}" id="vd${i}"></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function chkV(i, val) {
+  VAR_DATA[i].val = parseFloat(val) || 0;
+  const ok = VAR_DATA[i].val >= VAR_DATA[i].lic && VAR_DATA[i].val <= VAR_DATA[i].lsc;
+  document.getElementById('vi'+i).className = 'vinp ' + (ok?'ok':'er');
+  document.getElementById('vd'+i).className = 'vstat ' + (ok?'ok':'er');
+}
+
+function adjL(i, type, dir) {
+  const v = VAR_DATA[i];
+  const dec = v.step < 1 ? 1 : 0;
+  v[type] = parseFloat((v[type] + dir * v.step).toFixed(dec));
+  document.getElementById(type+i).textContent = v[type].toFixed(dec);
+  chkV(i, v.val);
+}
+
+// ── HEADER UPDATE ────────────────────────────────────────────────
+function updHdr() {
+  document.getElementById('hdr-planta').textContent = document.getElementById('planta').value || 'Planta';
+  const t = document.getElementById('turno').value.split('(')[0].trim();
+  document.getElementById('hdr-turno').textContent = t + ' · ' + new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── GENERATE CARD ────────────────────────────────────────────────
+function generar() {
+  const zona     = document.getElementById('zona').value;
+  const planta   = document.getElementById('planta').value;
+  const operador = document.getElementById('operador').value;
+  const turno    = document.getElementById('turno').value;
+  const obs      = document.getElementById('obs').value || 'Sin observaciones adicionales.';
+  const now      = new Date();
+  const ts       = now.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+  const ds       = now.toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const ref      = 'T-' + Math.floor(Math.random()*9000+1000);
+
+  const eqIssues = EQ_DATA.filter(e => e.state !== 'on');
+  const vIssues  = VAR_DATA.filter(v => v.val < v.lic || v.val > v.lsc);
+
+  if (!eqIssues.length && !vIssues.length) {
+    document.getElementById('placeholder').innerHTML = `
+      <div style="font-size:52px;margin-bottom:14px;">✅</div>
+      <h3 style="color:#27AE60;">Todo dentro de parámetros</h3>
+      <p style="color:#aaa;">Todos los equipos operativos y variables dentro de límites de control.<br>No se generaron tarjetas de alerta.</p>`;
+    document.getElementById('placeholder').style.display = 'flex';
+    document.getElementById('tarjeta-output').style.display = 'none';
+    return;
+  }
+
+  // Clasificar equipos por severidad
+  const eqOOS   = eqIssues.filter(e => e.state === 'off');   // Fuera de Servicio
+  const eqAlerta= eqIssues.filter(e => e.state === 'warn');  // Alerta
+  const hasOOS  = eqOOS.length > 0;
+  const hasAlerta = eqAlerta.length > 0;
+
+  const isMant = eqIssues.length > 0;
+  const isProd = vIssues.length > 0;
+  const tipo   = isMant && isProd ? 'MANTENIMIENTO + PRODUCCIÓN' : isMant ? 'MANTENIMIENTO' : 'PRODUCCIÓN';
+  const hdrBg  = isMant ? '#922B21' : '#1A5276';
+  const hdrBg2 = isMant ? '#C0392B' : '#2980B9';
+  const refPrefix = isMant ? 'TM' : 'TP';
+  const fullRef = refPrefix + '-' + Math.floor(Math.random()*9000+1000);
+
+  let varBadgesHTML = '';
+  vIssues.forEach(v => {
+    const dec = v.step < 1 ? 1 : 0;
+    const over = v.val > v.lsc;
+    const dir  = over ? `sobre LSC (${v.lsc.toFixed(dec)} ${v.unit})` : `bajo LIC (${v.lic.toFixed(dec)} ${v.unit})`;
+    varBadgesHTML += `
+      <div class="var-badge">
+        <div class="vb-head">
+          <span class="vb-name">${v.name} <span style="font-weight:400;font-size:10px;color:#aaa;">(${v.unit})</span></span>
+          <span class="vb-status" style="background:${over?'#E74C3C':'#E67E22'};color:#fff;">${over?'SOBRE LSC':'BAJO LIC'}</span>
+        </div>
+        <div class="vb-values">
+          <div class="vbv"><div class="vbv-lbl">Medido</div><div class="vbv-val out">${v.val} ${v.unit}</div></div>
+          <div class="vbv"><div class="vbv-lbl">LIC mín.</div><div class="vbv-val ok">${v.lic.toFixed(dec)} ${v.unit}</div></div>
+          <div class="vbv"><div class="vbv-lbl">LSC máx.</div><div class="vbv-val lim">${v.lsc.toFixed(dec)} ${v.unit}</div></div>
+          <div class="vbv"><div class="vbv-lbl">Desviación</div><div class="vbv-val out">${over?'+':''}${(v.val - (over?v.lsc:v.lic)).toFixed(dec)} ${v.unit}</div></div>
+        </div>
+      </div>`;
+  });
+
+  let eqBadgesHTML = '';
+  eqIssues.forEach(e => {
+    const col = e.state === 'warn' ? '#E67E22' : '#E74C3C';
+    const lbl = e.state === 'warn' ? '⚠ Alerta' : '✖ F. Servicio';
+    eqBadgesHTML += `
+      <div class="eq-badge" style="border-left-color:${col};background:${e.state==='warn'?'#FEF9F0':'#FADBD8'};">
+        <span class="eq-badge-name" style="color:${e.state==='warn'?'#935116':'#922B21'};">${e.name} <span style="font-weight:400;font-size:9.5px;color:#bbb;">— ${e.sub}</span></span>
+        <span class="eq-badge-state" style="background:${col};color:#fff;">${lbl}</span>
+      </div>`;
+  });
+
+  // Seleccionar acciones según el estado más crítico de los equipos
+  let accs, actTitle;
+  if (!isMant) {
+    // Solo variables fuera de límite → acciones de producción
+    accs = ACCIONES_PROD;
+    actTitle = 'Acción de producción requerida';
+  } else if (hasOOS) {
+    // Hay equipo Fuera de Servicio → acciones correctivas
+    accs = ACCIONES_CORRECTIVAS;
+    actTitle = 'Acción correctiva requerida';
+  } else {
+    // Solo equipos en Alerta (warn) → inspección y preparación
+    accs = ACCIONES_ALERTA;
+    actTitle = 'Revisión e inspección requerida';
+  }
+
+  const actBoxBg  = isProd && !isMant ? '#EBF5FB' : hasOOS ? '#FFF5F5' : '#FFF8F0';
+  const actBoxBdr = isProd && !isMant ? '#AED6F1' : hasOOS ? '#F1948A' : '#F0B27A';
+  const actLblCol = isProd && !isMant ? '#1A5276' : hasOOS ? '#922B21' : '#935116';
+  const actTxtCol = isProd && !isMant ? '#1A5276' : hasOOS ? '#7B241C' : '#6E2F0E';
+  const accsHTML  = accs.map((a,i)=>`<li><span class="act-num" style="color:${actLblCol};">${i+1}.</span><span>${a}</span></li>`).join('');
+
+  const cardHTML = `
+    <div class="tarjeta-wrap" id="print-zone">
+      <div class="tarjeta-doc">
+        <div class="td-hdr" style="background:linear-gradient(135deg,${hdrBg},${hdrBg2});">
+          <div class="td-hdr-top">
+            <div>
+              <div class="td-tipo-tag">${isMant?'🔧':'📋'} Tarjeta de ${tipo}</div>
+              <div class="td-ttl">${isMant?'Equipo fuera de servicio':'Variable fuera de control'}</div>
+            </div>
+            <div class="td-ref-box">
+              <div class="td-ref">${fullRef}</div>
+              <div class="td-ref-dt">${ds} · ${ts}</div>
+            </div>
+          </div>
+          <div class="td-progress"><div class="td-progress-fill" style="width:${isProd&&!isMant?'40':isMant&&!isProd?'60':'80'}%;"></div></div>
+        </div>
+        <div class="td-body">
+          <div class="td-grid">
+            <div class="td-field"><div class="td-lbl">Planta</div><div class="td-val">${planta}</div></div>
+            <div class="td-field"><div class="td-lbl">Zona / Línea</div><div class="td-val">${zona}</div></div>
+            <div class="td-field"><div class="td-lbl">Operador</div><div class="td-val">${operador}</div></div>
+            <div class="td-field"><div class="td-lbl">Turno</div><div class="td-val">${turno}</div></div>
+            <div class="td-field"><div class="td-lbl">Fecha</div><div class="td-val">${ds}</div></div>
+            <div class="td-field"><div class="td-lbl">Hora del evento</div><div class="td-val">${ts}</div></div>
+          </div>
+          <div class="td-divider"></div>
+          ${eqBadgesHTML ? `<div style="margin-bottom:10px;"><div class="td-lbl" style="font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;letter-spacing:.06em;margin-bottom:7px;">Equipo(s) en alerta</div>${eqBadgesHTML}</div><div class="td-divider"></div>` : ''}
+          ${varBadgesHTML ? `<div style="margin-bottom:10px;"><div class="td-lbl" style="font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;letter-spacing:.06em;margin-bottom:7px;">Variable(s) fuera de límites</div>${varBadgesHTML}</div><div class="td-divider"></div>` : ''}
+          ${photoDataURL ? `
+          <div class="td-photo">
+            <div class="td-lbl" style="font-size:8.5px;font-weight:700;text-transform:uppercase;color:#bbb;letter-spacing:.06em;margin-bottom:7px;">📷 Fotografía del evento</div>
+            <img src="${photoDataURL}" alt="Foto del evento" style="width:100%;max-height:220px;object-fit:contain;background:#F8F8F8;border-radius:8px;border:1px solid #E0E4EA;">
+          </div>
+          <div class="td-divider"></div>` : ''}
+          <div class="obs-box">
+            <div class="obs-box-lbl">Observación del operador</div>
+            <div class="obs-box-txt">${obs}</div>
+          </div>
+          <div class="act-box" style="background:${actBoxBg};border:1px solid ${actBoxBdr};">
+            <div class="act-box-lbl" style="color:${actLblCol};">
+              <svg width="14" height="14" viewBox="0 0 24 24" stroke="${actLblCol}" fill="none" stroke-width="2.5" style="vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              ${actTitle}
+            </div>
+            <ul class="act-box-items" style="color:${actTxtCol};">${accsHTML}</ul>
+          </div>
+          <div class="td-divider"></div>
+          <div class="sig-grid">
+            <div class="sig-box">
+              <div class="sig-line">${operador}</div>
+              <div class="sig-lbl">Operador que reporta</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-line"></div>
+              <div class="sig-lbl">Supervisor de producción</div>
+            </div>
+            <div class="sig-box">
+              <div class="sig-line"></div>
+              <div class="sig-lbl">Jefe de planta</div>
+            </div>
+          </div>
+          <div class="cierre-box">
+            <div class="cierre-field"><div class="cierre-lbl">Acción tomada</div></div>
+            <div class="cierre-field"><div class="cierre-lbl">Fecha de cierre</div></div>
+          </div>
+        </div>
+        <div class="td-footer">
+          <div class="td-footer-l">PandaApps · Plataforma de mejora continua industrial · ${fullRef}</div>
+          <div class="td-footer-r">Generado: ${ds} ${ts}</div>
+        </div>
+      </div>
+      <div class="print-area">
+        <button class="print-btn print-btn-main" style="background:${hdrBg2};" onclick="window.print()">
+          <svg width="16" height="16" viewBox="0 0 24 24" stroke="white" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir / Guardar PDF
+        </button>
+        <button class="print-btn print-btn-sec" onclick="resetCard()">
+          <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Nueva tarjeta
+        </button>
+      </div>
+    </div>`;
+
+  document.getElementById('placeholder').style.display = 'none';
+  const out = document.getElementById('tarjeta-output');
+  out.innerHTML = cardHTML;
+  out.style.display = 'flex';
+  out.style.flexDirection = 'column';
+  // On mobile, switch to card tab automatically
+  if (window.innerWidth <= 768) { mobTab('card'); }
+  out.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetCard() {
+  document.getElementById('tarjeta-output').style.display = 'none';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('placeholder').innerHTML = `
+    <svg viewBox="0 0 64 64" style="width:64px;height:64px;stroke:#ddd;fill:none;stroke-width:1.2;margin-bottom:16px;"><rect x="10" y="8" width="44" height="48" rx="4"/><line x1="18" y1="20" x2="46" y2="20"/><line x1="18" y1="28" x2="46" y2="28"/><line x1="18" y1="36" x2="38" y2="36"/><circle cx="46" cy="44" r="8"/><line x1="43" y1="44" x2="49" y2="44"/><line x1="46" y1="41" x2="46" y2="47"/></svg>
+    <h3>Sin tarjeta generada</h3>
+    <p>Complete el formulario y presione<br><strong>Generar Tarjeta(s)</strong> para ver la vista previa</p>`;
+}
+
+// ── MOBILE TAB NAVIGATION ────────────────────────────────────────
+function mobTab(tab) {
+  const fp = document.getElementById('form-panel');
+  const cp = document.getElementById('card-panel');
+  fp.classList.remove('mob-show');
+  cp.classList.remove('mob-show');
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('act'));
+  if (tab === 'form') {
+    fp.classList.add('mob-show');
+    document.getElementById('mtab-form').classList.add('act');
+  } else {
+    cp.classList.add('mob-show');
+    document.getElementById('mtab-card').classList.add('act');
+  }
+}
+
+// ── SERVICE WORKER (PWA) ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+buildEq();
+buildVars();
+updHdr();
+// Show form panel by default on mobile
+if (window.innerWidth <= 768) {
+  document.getElementById('form-panel').classList.add('mob-show');
+}
+</script>
+</body>
+</html>

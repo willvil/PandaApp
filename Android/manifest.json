@@ -1,0 +1,15 @@
+{
+  "name": "PandaApps — Registro de Turno",
+  "short_name": "PandaApps",
+  "description": "Registro de turno industrial con generación automática de tarjetas",
+  "start_url": "./Registro_Turno_PandaApps.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D1B2A",
+  "theme_color": "#0D1B2A",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
